@@ -30,7 +30,7 @@ jobs:
           script: |
             const isDispatch = context.eventName === 'workflow_dispatch';
 
-            console.log("=== DEBUG INFO ===");
+            console.log("________________________________");
             console.log("Event name:", context.eventName);
             console.log("Is dispatch:", isDispatch);
 
@@ -55,7 +55,7 @@ jobs:
 
             console.log("Final issueNumber:", issueNumber);
             console.log("Issue title:", issue.title);
-            console.log("===================");
+            console.log("________________________________");
 
             if (!issueNumber || isNaN(issueNumber)) {
               throw new Error("Invalid issue number");
@@ -127,6 +127,6 @@ jobs:
                 issue_number: issueNumber,
                 labels: [contextValue],
               });
-              console.log(`✅ Added label: ${contextValue}`);
+              console.log(`Added label: ${contextValue}`);
             }
 
