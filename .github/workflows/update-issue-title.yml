@@ -42,4 +42,4 @@ jobs:
           REPO_OWNER: ${{ github.repository_owner }}
           REPO_NAME: ${{ github.event.repository.name }}
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
-        run: npx ts-node Scripts/UpdateIssueTitle.ts
+        run: npx ts-node --esm Scripts/UpdateIssueTitle.ts
