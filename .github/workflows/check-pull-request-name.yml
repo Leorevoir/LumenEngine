@@ -10,19 +10,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Check pull-request name
         uses: actions/github-script@v7
 
         with:
           script: |
-            const title = context.payload.pull_request.title;
-            const pattern = /^(feat|fix|chore|docs|style|refactor|perf|test|ci|build)(\(.+\))?: .+/;
-            if (!pattern.test(title)) {
-              core.setFailed(
-                `PR title "${title}" does not follow Conventional Commits format.\n` +
-                `Format required: type(scope?): message\n` +
-                `Example: feat(auth): add login functionality`
-              );
-            } else {
-              console.log(`PR title "${title}" follows the Conventional Commits format.`);
-            }
+            const script = require('./Scripts/CheckPullRequestName.js');
+            await script({ github, context, core });
