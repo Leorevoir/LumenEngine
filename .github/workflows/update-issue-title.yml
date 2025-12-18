@@ -28,7 +28,13 @@ jobs:
           script: |
             const isWorkflowDispatch = context.eventName === 'workflow_dispatch';
             const dryRun = isWorkflowDispatch ? context.payload.inputs.dry_run === 'true' : false;
-            let issueNumber = context.payload.issue ? context.payload.issue.number : parseInt(context.payload.inputs.issue_number);
+            
+            let issueNumber;
+            if (isWorkflowDispatch) {
+              issueNumber = parseInt(context.payload.inputs.issue_number);
+            } else {
+              issueNumber = context.payload.issue.number;
+            }
             
             let issue;
             if (isWorkflowDispatch) {
