@@ -4,3 +4,5 @@
 *.zig linguist-language=Zig
 *.cpp linguist-language=C++
 *.hpp linguist-language=C++
+*.frag linguist-language=glsl
+*.vert linguist-language=glsl
