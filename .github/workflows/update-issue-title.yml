@@ -2,6 +2,7 @@ name: Update Issue Title
 on:
   issues:
     types: [opened, edited]
+  workflow_dispatch:
 
 jobs:
   update-title:
