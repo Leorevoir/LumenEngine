@@ -1,0 +1,6 @@
+*.ts linguist-language=TypeScript
+*.yml linguist-language=YAML
+*.md linguist-language=Markdown
+*.zig linguist-language=Zig
+*.cpp linguist-language=C++
+*.hpp linguist-language=C++
