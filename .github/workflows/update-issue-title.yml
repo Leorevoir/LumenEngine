@@ -28,5 +28,5 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const script = require('../../Scripts/UpdateIssueTitle.js');
+            const script = require('./Scripts/UpdateIssueTitle.js');
             await script({ github, context, core });
