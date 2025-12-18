@@ -1,58 +1,44 @@
-module.exports = async ({ github, context, core }) => {
-  const isDispatch = context.eventName === "workflow_dispatch";
+/**
+ * updates github issue title based on its body and labels
+ * author: @leorevoir
+ */
 
-  console.log("________________________________");
-  console.log("Event name:", context.eventName);
-  console.log("Is dispatch:", isDispatch);
+/**
+ * constants
+ */
 
-  let issueNumber;
-  let issue;
+const PREFIX_MAP = {
+  bug: "fix",
+  feature: "feat",
+  documentation: "docs",
+  "ci/cd": "ci",
+  test: "test",
+  perf: "perf",
+  refactor: "refactor",
+  style: "style",
+  chore: "chore",
+};
 
+async function getIssue({ github, context, isDispatch }) {
   if (isDispatch) {
-    issueNumber = parseInt(context.payload.inputs.issue_number);
+    const issueNumber = parseInt(context.payload.inputs.issue_number);
     console.log(
       "Dispatch input issue_number:",
       context.payload.inputs.issue_number,
     );
     console.log("Parsed issueNumber:", issueNumber);
 
-    const { data: fetchedIssue } = await github.rest.issues.get({
+    const { data } = await github.rest.issues.get({
       owner: context.repo.owner,
       repo: context.repo.repo,
       issue_number: issueNumber,
     });
-    issue = fetchedIssue;
-  } else {
-    issueNumber = context.payload.issue.number;
-    issue = context.payload.issue;
+    return data;
   }
+  return context.payload.issue;
+}
 
-  console.log("Final issueNumber:", issueNumber);
-  console.log("Issue title:", issue.title);
-  console.log("________________________________");
-
-  if (!issueNumber || isNaN(issueNumber)) {
-    throw new Error("Invalid issue number");
-  }
-
-  const dryRun = isDispatch && context.payload.inputs.dry_run === "true";
-
-  const body = issue.body || "";
-  const title = issue.title || "";
-  const labels = issue.labels.map((l) => (typeof l === "string" ? l : l.name));
-
-  const PREFIX_MAP = {
-    bug: "fix",
-    feature: "feat",
-    documentation: "docs",
-    "ci/cd": "ci",
-    test: "test",
-    perf: "perf",
-    refactor: "refactor",
-    style: "style",
-    chore: "chore",
-  };
-
+function generateTitle(body, labels, currentTitle) {
   const prefix = labels.find((l) => PREFIX_MAP[l])
     ? PREFIX_MAP[labels.find((l) => PREFIX_MAP[l])]
     : "chore";
@@ -66,40 +52,97 @@ module.exports = async ({ github, context, core }) => {
   const summaryValue = extract(/### Summary\s*([\s\S]*?)(?=###|$)/);
 
   if (!contextValue || !summaryValue) {
-    console.log("Missing context or summary in issue body");
-    return;
+    return null;
   }
 
-  const newTitle = `${prefix}(${contextValue}): ${summaryValue}`;
+  return `${prefix}(${contextValue}): ${summaryValue}`;
+}
 
-  if (newTitle === title) {
-    console.log("Title already up to date");
-    return;
-  }
+function logDryRun(issueNumber, currentTitle, newTitle) {
+  console.log(`[DRY_RUN] issue #${issueNumber}`);
+  console.log(`[DRY_RUN] current title: ${currentTitle}`);
+  console.log(`[DRY_RUN] new title: ${newTitle}`);
+}
 
-  if (dryRun) {
-    console.log(`[DRY_RUN] issue #${issueNumber}`);
-    console.log(`[DRY_RUN] current title: ${title}`);
-    console.log(`[DRY_RUN] new title: ${newTitle}`);
-    return;
-  }
-
+async function updateIssueTitle({ github, context, issueNumber, newTitle }) {
   await github.rest.issues.update({
     owner: context.repo.owner,
     repo: context.repo.repo,
     issue_number: issueNumber,
     title: newTitle,
   });
-
   console.log(`Updated issue #${issueNumber} title to: ${newTitle}`);
+}
 
-  if (!labels.includes(contextValue)) {
-    await github.rest.issues.addLabels({
-      owner: context.repo.owner,
-      repo: context.repo.repo,
-      issue_number: issueNumber,
-      labels: [contextValue],
-    });
-    console.log(`Added label: ${contextValue}`);
+async function addContextLabelIfMissing({
+  github,
+  context,
+  issueNumber,
+  labels,
+  body,
+}) {
+  const contextLabel = (body.match(/### Context\s*([\s\S]*?)(?=###|$)/) ||
+    [])[1]?.trim();
+  if (!contextLabel || labels.includes(contextLabel)) return;
+
+  await github.rest.issues.addLabels({
+    owner: context.repo.owner,
+    repo: context.repo.repo,
+    issue_number: issueNumber,
+    labels: [contextLabel],
+  });
+  console.log(`Added label: ${contextLabel}`);
+}
+
+/**
+ * entry-point
+ */
+
+module.exports = async ({ github, context, core }) => {
+  console.log("________________________________");
+  console.log("Event name:", context.eventName);
+
+  const isDispatch = context.eventName === "workflow_dispatch";
+  console.log("Is workflow dispatch:", isDispatch);
+
+  const issue = await getIssue({ github, context, isDispatch });
+  const issueNumber = issue.number;
+
+  console.log("Final issueNumber:", issueNumber);
+  console.log("Issue title:", issue.title);
+  console.log("________________________________");
+
+  if (!issueNumber) {
+    throw new Error("Invalid issue number");
   }
+
+  const dryRun = isDispatch && context.payload.inputs.dry_run === "true";
+  const { title: currentTitle, body = "", labels = [] } = issue;
+  const labelNames = labels.map((l) => (typeof l === "string" ? l : l.name));
+
+  const newTitle = generateTitle(body, labelNames, currentTitle);
+
+  if (!newTitle) {
+    console.log("Missing required context or summary in issue body");
+    return;
+  }
+
+  if (newTitle === currentTitle) {
+    console.log("Title already up to date");
+    return;
+  }
+
+  if (dryRun) {
+    logDryRun(issueNumber, currentTitle, newTitle);
+    return;
+  }
+
+  await updateIssueTitle({ github, context, issueNumber, newTitle });
+  await addContextLabelIfMissing({
+    github,
+    context,
+    issueNumber,
+    labels: labelNames,
+    body,
+  });
 };
