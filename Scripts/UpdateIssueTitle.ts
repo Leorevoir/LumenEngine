@@ -9,8 +9,9 @@ const ISSUE_NUMBER = parseInt(process.env.ISSUE_NUMBER ?? "0", 10);
 const ISSUE_BODY = process.env.ISSUE_BODY || "";
 const ISSUE_TITLE = process.env.ISSUE_TITLE || "";
 const ISSUE_LABELS = process.env.ISSUE_LABELS || "[]";
-const REPO_OWNER = process.env.REPO_OWNER;
-const REPO_NAME = process.env.REPO_NAME;
+const REPO_OWNER = process.env.REPO_OWNER || "";
+const REPO_NAME = process.env.REPO_NAME || "";
+const DRY_RUN = process.env.DRY_RUN === "true";
 
 const ERROR = 84;
 const SUCCESS = 0;
@@ -40,6 +41,7 @@ const LABEL_PREFIX_MAP: Record<string, string> = {
 /**
  * get the prefix based on labels || chore
  */
+
 function getPrefix(labels: string[]): string {
   const foundLabel = labels.find((label) => LABEL_PREFIX_MAP[label]);
   return foundLabel ? LABEL_PREFIX_MAP[foundLabel] : "chore";
@@ -56,11 +58,17 @@ function extractFromBody(regex: RegExp, body: string): string {
 
 async function updateTitle(
   octokit: Octokit,
-  owner: string | undefined,
-  repo: string | undefined,
+  owner: string,
+  repo: string,
   issueNumber: number,
   newTitle: string,
 ): Promise<void> {
+  if (DRY_RUN) {
+    console.log(
+      `[DRY_RUN] Would update issue #${issueNumber} title to: "${newTitle}"`,
+    );
+    return;
+  }
   await octokit.rest.issues.update({
     owner,
     repo,
@@ -72,13 +80,19 @@ async function updateTitle(
 
 async function addLabelIfMissing(
   octokit: Octokit,
-  owner: string | undefined,
-  repo: string | undefined,
+  owner: string,
+  repo: string,
   issueNumber: number,
   currentLabels: string[],
   context: string,
 ): Promise<void> {
   if (!currentLabels.includes(context)) {
+    if (DRY_RUN) {
+      console.log(
+        `[DRY_RUN] Would add label: "${context}" to issue #${issueNumber}`,
+      );
+      return;
+    }
     await octokit.rest.issues.addLabels({
       owner,
       repo,
@@ -91,11 +105,17 @@ async function addLabelIfMissing(
 
 async function createComment(
   octokit: Octokit,
-  owner: string | undefined,
-  repo: string | undefined,
+  owner: string,
+  repo: string,
   issueNumber: number,
   message: string,
 ): Promise<void> {
+  if (DRY_RUN) {
+    console.log(
+      `[DRY_RUN] Would create comment on issue #${issueNumber}: "${message}"`,
+    );
+    return;
+  }
   await octokit.rest.issues.createComment({
     owner,
     repo,
@@ -125,6 +145,11 @@ async function updateIssueTitle(): Promise<number> {
 
     if (!context || !summary) {
       console.error("Missing context or summary. Skipping title update.");
+      return ERROR;
+    }
+
+    if (!REPO_OWNER || !REPO_NAME) {
+      console.error("Missing REPO_OWNER or REPO_NAME.");
       return ERROR;
     }
 
