@@ -1,6 +1,6 @@
 name: Bug Report
 description: Report a bug in the project
-title: "fix(<context>): <msg>"
+title: "TEMPORARY TITLE"
 labels: ["bug"]
 
 body:
