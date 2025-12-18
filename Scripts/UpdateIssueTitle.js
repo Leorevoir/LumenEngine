@@ -1,0 +1,105 @@
+module.exports = async ({ github, context, core }) => {
+  const isDispatch = context.eventName === "workflow_dispatch";
+
+  console.log("________________________________");
+  console.log("Event name:", context.eventName);
+  console.log("Is dispatch:", isDispatch);
+
+  let issueNumber;
+  let issue;
+
+  if (isDispatch) {
+    issueNumber = parseInt(context.payload.inputs.issue_number);
+    console.log(
+      "Dispatch input issue_number:",
+      context.payload.inputs.issue_number,
+    );
+    console.log("Parsed issueNumber:", issueNumber);
+
+    const { data: fetchedIssue } = await github.rest.issues.get({
+      owner: context.repo.owner,
+      repo: context.repo.repo,
+      issue_number: issueNumber,
+    });
+    issue = fetchedIssue;
+  } else {
+    issueNumber = context.payload.issue.number;
+    issue = context.payload.issue;
+  }
+
+  console.log("Final issueNumber:", issueNumber);
+  console.log("Issue title:", issue.title);
+  console.log("________________________________");
+
+  if (!issueNumber || isNaN(issueNumber)) {
+    throw new Error("Invalid issue number");
+  }
+
+  const dryRun = isDispatch && context.payload.inputs.dry_run === "true";
+
+  const body = issue.body || "";
+  const title = issue.title || "";
+  const labels = issue.labels.map((l) => (typeof l === "string" ? l : l.name));
+
+  const PREFIX_MAP = {
+    bug: "fix",
+    feature: "feat",
+    documentation: "docs",
+    "ci/cd": "ci",
+    test: "test",
+    perf: "perf",
+    refactor: "refactor",
+    style: "style",
+    chore: "chore",
+  };
+
+  const prefix = labels.find((l) => PREFIX_MAP[l])
+    ? PREFIX_MAP[labels.find((l) => PREFIX_MAP[l])]
+    : "chore";
+
+  const extract = (regex) => {
+    const m = body.match(regex);
+    return m ? m[1].trim() : "";
+  };
+
+  const contextValue = extract(/### Context\s*([\s\S]*?)(?=###|$)/);
+  const summaryValue = extract(/### Summary\s*([\s\S]*?)(?=###|$)/);
+
+  if (!contextValue || !summaryValue) {
+    console.log("Missing context or summary in issue body");
+    return;
+  }
+
+  const newTitle = `${prefix}(${contextValue}): ${summaryValue}`;
+
+  if (newTitle === title) {
+    console.log("Title already up to date");
+    return;
+  }
+
+  if (dryRun) {
+    console.log(`[DRY_RUN] issue #${issueNumber}`);
+    console.log(`[DRY_RUN] current title: ${title}`);
+    console.log(`[DRY_RUN] new title: ${newTitle}`);
+    return;
+  }
+
+  await github.rest.issues.update({
+    owner: context.repo.owner,
+    repo: context.repo.repo,
+    issue_number: issueNumber,
+    title: newTitle,
+  });
+
+  console.log(`Updated issue #${issueNumber} title to: ${newTitle}`);
+
+  if (!labels.includes(contextValue)) {
+    await github.rest.issues.addLabels({
+      owner: context.repo.owner,
+      repo: context.repo.repo,
+      issue_number: issueNumber,
+      labels: [contextValue],
+    });
+    console.log(`Added label: ${contextValue}`);
+  }
+};
