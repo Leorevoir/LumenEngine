@@ -1,4 +1,5 @@
 .*/
+zig-out/
 !.github/
 
 node_modules/
