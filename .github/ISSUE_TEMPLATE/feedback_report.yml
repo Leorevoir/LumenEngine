@@ -18,7 +18,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thank you for reporting a bug! Please provide the details below. After submission, a workflow will automatically update the issue title based on your inputs.
+        Thank you for your feedback! Please provide the details below. After submission, a workflow will automatically update the issue title based on your inputs.
 
   - type: dropdown
     id: context
