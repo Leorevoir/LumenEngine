@@ -1,24 +1,23 @@
-name: Feedback / Report
-description: Report a bug or suggest a new feature
+name: "Bug Report"
+description: Report a bug to help us improve
 title: "TEMPORARY TITLE"
-labels: []
+labels: ["bug"]
 
 body:
   - type: dropdown
     id: issue_type
     attributes:
       label: Type
-      description: Bug or Feature?
+      description: Confirm the type of report
       options:
         - Bug
-        - Feature
     validations:
       required: true
 
   - type: markdown
     attributes:
       value: |
-        Thank you for your feedback! Please provide the details below. After submission, a workflow will automatically update the issue title based on your inputs.
+        Thank you for reporting a bug! Please provide the details below. After submission, a workflow will automatically update the issue title.
 
   - type: dropdown
     id: context
@@ -40,7 +39,7 @@ body:
     attributes:
       label: Summary
       description: Provide a short summary message for the bug.
-      placeholder: e.g., Fixed rendering glitch in shadows
+      placeholder: e.g., Rendering glitch in shadows
     validations:
       required: true
 
@@ -53,6 +52,5 @@ body:
         1. While doing '...'
         2. This happens '...'
         3. See the error
-      validations:
-        required: false
-      if: "issue_type == 'Bug'"
+    validations:
+      required: false
