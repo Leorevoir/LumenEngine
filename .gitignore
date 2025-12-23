@@ -1,10 +1,11 @@
 .*/
-zig-out/
 !.github/
 
 node_modules/
 
 bin/
+obj/
 out/
+Build/
 
 *.sh
