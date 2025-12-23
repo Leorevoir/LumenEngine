@@ -6,3 +6,4 @@
 *.hpp linguist-language=C++
 *.frag linguist-language=glsl
 *.vert linguist-language=glsl
+*.cs linguist-language=C#
