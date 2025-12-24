@@ -103,9 +103,9 @@ namespace LumenBuilder
 
             string[] SourceRoots = new[]
             {
-            Paths.Combine(RootDir, "LumenEngine"),
-            Paths.Combine(RootDir, "Examples")
-        };
+                Paths.Combine(RootDir, "LumenEngine"),
+                Paths.Combine(RootDir, "Examples")
+            };
 
             return new BuildOptions(
                 SourceRoots,
