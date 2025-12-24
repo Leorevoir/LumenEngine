@@ -8,6 +8,9 @@ obj/
 out/
 Build/
 
+Intermediate/
+Binaries/
+
 Makefile
 CMakeLists.txt
 build.ninja
