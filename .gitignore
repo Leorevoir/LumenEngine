@@ -8,4 +8,8 @@ obj/
 out/
 Build/
 
+Makefile
+CMakeLists.txt
+build.ninja
+
 *.sh
