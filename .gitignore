@@ -1,4 +1,4 @@
-.*/
+.*
 !.github/
 
 node_modules/
@@ -16,3 +16,6 @@ CMakeLists.txt
 build.ninja
 
 *.sh
+!.clang-format
+!.gitignore
+!.gitattributes
