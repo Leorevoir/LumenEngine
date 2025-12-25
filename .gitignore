@@ -1,4 +1,4 @@
-.*/
+.*
 !.github/
 
 node_modules/
@@ -8,4 +8,14 @@ obj/
 out/
 Build/
 
+Intermediate/
+Binaries/
+
+Makefile
+CMakeLists.txt
+build.ninja
+
 *.sh
+!.clang-format
+!.gitignore
+!.gitattributes
